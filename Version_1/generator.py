@@ -10,7 +10,7 @@ os.makedirs(OUTBOX, exist_ok=True)
 
 DEFAULT_NICHE = "personal finance"
 
-def call_ollama_prompt(prompt: str, model="mistral"):
+def call_ollama_prompt(prompt: str, model="gemma:2b"):
     try:
         # write prompt to temp file and call ollama if in PATH
         with tempfile.NamedTemporaryFile("w", delete=False) as tf:

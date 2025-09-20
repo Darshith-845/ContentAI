@@ -1,4 +1,6 @@
-ContentAI
-
-So my plan is to create a agent to generate ready to publish content 
-This content will be in various format from blogs to ready to publish youtube videos
+Okay lets see
+I am trying to create a automation tool that will automatically write some article for starters(later we can try some video content too), then post on the blogging platforms to get reach 
+For starters lets create this helper function which will contain necessary tools to automate the task. First off the all lets collect the cookies. These cookies are collected when we manually login and are dumped in the pickled file. Then later this pickled file is loaded when the computer tries to login. It uses these session cookies. This was the one of the task.
+The next thing is so that these sites on don't caught on to the thing that we are using a bot we have to make it appear a human is writing. For that reason we can't directly use JavaScript ingestion and try to get the thing published. Instead we must try to mimic the human behavior and for that purpose lets start will the human typing speed. First of all the lets divide the text into sentences and later into words and then characters. We are assuming here that 5 characters make a word here. Lets suppose here wpm is 40 and variance is 0.25. Here we are using variance because we can't simply just type 2 words pause for some seconds and then type 2 words again. The system might recognize the pattern that's why we are using variance here and there is this logger thing.
+So now helper function was just had helper things, duh!! Lets move to save_cookies file. Here we will use undetected chromedriver. Generally we use web chromedriver but here we are using undetected chromedriver for stealth. It is used to hide from things like cloud flare as it does various things like mimic the variable name but in the case of Exception error jump to web chromedriver. These cookies will be saved and dumped into the cookies file
+Lets see the generotor file, it basically contains the niche and propmpt to generate the script. For now, I am using gemma-2b lets see what other i can try in the future 
