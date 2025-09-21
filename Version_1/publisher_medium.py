@@ -7,6 +7,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 
 COOKIE_FILE = "cookies.pkl"
 OUTBOX = "outbox"
@@ -56,63 +60,62 @@ def find_contenteditable_nodes(driver):
 
 def set_title_and_body_by_typing(driver, title, body, typing_wpm=40):
     """
-    Find title and body fields, focus them, and type the text.
-    We will:
-      - pick first contenteditable as title (usually)
-      - pick the next big contenteditable as body
+    Locate Medium's title + body fields and type the article.
+    Uses multiple fallback selectors since Medium's DOM changes often.
     """
-    time.sleep(3)
-    els = find_contenteditable_nodes(driver)
-    if not els or len(els) < 1:
-        raise RuntimeError("No contenteditable elements found on the page. Page structure may have changed.")
-    # choose title node as first, and body as second (or last) if available
-    title_node = els[0]
-    body_node = els[1] if len(els) > 1 else els[-1]
+    wait = WebDriverWait(driver, 15)
 
-    # clear existing text (select all + delete)
+    # --- TITLE ---
     try:
-        title_node.click()
-    except Exception:
-        driver.execute_script("arguments[0].focus();", title_node)
-    time.sleep(0.5)
-    # select all and delete
-    title_node.send_keys(Keys.CONTROL, "a")
-    time.sleep(0.1)
-    title_node.send_keys(Keys.DELETE)
-    time.sleep(0.2)
-    # type title
-    human_typing_send_keys(title_node, title, wpm=typing_wpm)
+        title_box = wait.until(EC.presence_of_element_located((
+            By.CSS_SELECTOR,
+            "h1[contenteditable='true'], "
+            "h1.graf--title, "
+            "h1[placeholder='Title'], "
+            "section div[data-placeholder='Title']"
+        )))
+    except Exception as e:
+        print("[DEBUG] Could not locate title. Dumping first 2000 chars of page HTML:")
+        print(driver.page_source[:2000])
+        raise RuntimeError(f"Could not find the title field: {e}")
+
+    title_box.click()
+    time.sleep(0.3)
+    title_box.send_keys(Keys.CONTROL, "a")
+    title_box.send_keys(Keys.DELETE)
+    human_typing_send_keys(title_box, title, wpm=typing_wpm)
     time.sleep(random.uniform(0.5, 1.2))
 
-    # body: focus and clear
+    # --- BODY ---
     try:
-        body_node.click()
-    except Exception:
-        driver.execute_script("arguments[0].focus();", body_node)
-    time.sleep(0.3)
-    # clear existing
-    body_node.send_keys(Keys.CONTROL, "a")
-    time.sleep(0.1)
-    body_node.send_keys(Keys.DELETE)
-    time.sleep(0.2)
+        body_box = wait.until(EC.presence_of_element_located((
+            By.CSS_SELECTOR,
+            "article div[contenteditable='true'], "
+            "section div[contenteditable='true'], "
+            "div[role='textbox']"
+        )))
+    except Exception as e:
+        print("[DEBUG] Could not locate body. Dumping first 2000 chars of page HTML:")
+        print(driver.page_source[:2000])
+        raise RuntimeError(f"Could not find the body field: {e}")
 
-    # Type paragraph by paragraph: we'll split body into paragraphs then sentences
+    body_box.click()
+    time.sleep(0.3)
+    body_box.send_keys(Keys.CONTROL, "a")
+    body_box.send_keys(Keys.DELETE)
+
+    # --- TYPE ARTICLE ---
     paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
     for p in paragraphs:
-        # inject a newline before each paragraph (press Enter twice to create a paragraph block)
-        # Type paragraph sentence-by-sentence
         sentences = split_to_sentences(p)
         for s in sentences:
-            human_typing_send_keys(body_node, s, wpm=typing_wpm)
-            # after each sentence add a space (or let next send_keys continue)
-            body_node.send_keys(" ")
+            human_typing_send_keys(body_box, s, wpm=typing_wpm)
+            body_box.send_keys(" ")
             time.sleep(random.uniform(0.05, 0.18))
-        # after paragraph, press Enter twice to create new paragraph
-        body_node.send_keys(Keys.ENTER)
-        time.sleep(0.05)
-        body_node.send_keys(Keys.ENTER)
+        body_box.send_keys(Keys.ENTER)
+        body_box.send_keys(Keys.ENTER)
         time.sleep(random.uniform(0.2, 0.6))
-
+        
 def click_publish_flow(driver, confirm_publish=True):
     time.sleep(1)
     # Click "Publish" or "Publish" button in UI
