@@ -16,9 +16,15 @@ def call_ollama_prompt(prompt: str, model="gemma:2b"):
         with tempfile.NamedTemporaryFile("w", delete=False) as tf:
             tf.write(prompt)
             pf = tf.name
-        proc = subprocess.run(["ollama", "run", model, "--prompt-file", pf],
-                              capture_output=True, text=True, timeout=180)
+        OLLAMA_PATH = "/home/darshith/bin/ollama"
+        proc = subprocess.run([OLLAMA_PATH, "run", model],
+                              input=prompt,  # Pass the prompt string as standard input
+                              capture_output=True, 
+                              text=True, 
+                              encoding='utf-8', # Ensure correct encoding for input
+                              timeout=180)
         if proc.returncode == 0:
+            print("Ollama ran successfully")
             return proc.stdout
         else:
             print("[generator] Ollama returned error:", proc.stderr[:400])
